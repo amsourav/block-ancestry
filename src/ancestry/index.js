@@ -2,34 +2,35 @@ const fs = require('fs/promises')
 const { DATA_PATH } = require('../constant')
 const debug = require("debug")('INFO');
 
-async function _merge() {
-    const dataFiles = await fs.readdir(DATA_PATH);
-    let response = []
-    for (let file of dataFiles) {
-        const fileData = await fs.readFile(`${DATA_PATH}/${file}`);
-        response = response.concat(JSON.parse(fileData.toString()))
-    }
-    return response
-}
-
-
-function _processChildren(inputs) {
-    return inputs.map(input => input.txid)
-}
 
 
 class TransactionAncestory {
     #BLOCK_GRAPH = new Map();
 
+    async  #_merge() {
+        const dataFiles = await fs.readdir(DATA_PATH);
+        let response = []
+        for (let file of dataFiles) {
+            const fileData = await fs.readFile(`${DATA_PATH}/${file}`);
+            response = response.concat(JSON.parse(fileData.toString()))
+        }
+        return response
+    }
+
+
+    #_processChildren(inputs) {
+        return inputs.map(input => input.txid)
+    }
+
     // pre process the transactions
     async preProcess() {
-        const transactions = await _merge()
+        const transactions = await this.#_merge()
         for (let transaction of transactions) {
             if (this.#BLOCK_GRAPH.has(transaction.txid)) {
                 // 
             } else {
                 // Does not exist on Graph
-                this.#BLOCK_GRAPH.set(transaction.txid, _processChildren(transaction.vin))
+                this.#BLOCK_GRAPH.set(transaction.txid, this.#_processChildren(transaction.vin))
             }
 
         }
@@ -72,8 +73,6 @@ class TransactionAncestory {
 
         return output.sort((a, b) => b[1] - a[1])
     }
-
-
 }
 
 module.exports = TransactionAncestory

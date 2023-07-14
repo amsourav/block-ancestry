@@ -9,6 +9,11 @@
 
 - `npm start`
 
+## debug mode
+
+- Seeding `DEBUG=INFO npm run seed`
+- Execute `DEBUG=INFO npm start`
+
 ## output
 
 ```csv
