@@ -1,5 +1,6 @@
 const fetch = require('isomorphic-fetch');
-const fs = require('fs/promises')
+const fs = require('fs/promises');
+const { DATA_PATH } = require('../constant');
 const debug = require('debug')("INFO")
 
 const BLOCK_HASH = '000000000000000000076c036ff5119e5a5a74df77abf64203473364509f7732'
@@ -13,7 +14,7 @@ async function getTransactions() {
 
     let offset = 0
     const increment = 25
-    const cachedFiles = new Set(await fs.readdir('data'));
+    const cachedFiles = new Set(await fs.readdir(DATA_PATH));
 
     while (offset <= MAX_SIZE) {
         try {
@@ -21,7 +22,7 @@ async function getTransactions() {
             if (!cachedFiles.has(FILE_NAME)) {
                 const response = await fetch(CONSTRUCT_TRANSACTION_API({ offset }))
                     .then(e => e.json())
-                await fs.writeFile(`data/${FILE_NAME}`, JSON.stringify(response))
+                await fs.writeFile(`${DATA_PATH}/${FILE_NAME}`, JSON.stringify(response))
                 debug({
                     message: `SUCCESS: offset: ${offset}`
                 })

@@ -4,6 +4,7 @@ const debug = require("debug")('INFO');
 
 
 
+
 class TransactionAncestory {
     #BLOCK_GRAPH = new Map();
 
@@ -18,8 +19,32 @@ class TransactionAncestory {
     }
 
 
+    #dfs(tx) {
+        let stack = [tx]
+        const visited = new Set()
+        while (stack.length) {
+            const node = stack.pop();
+            visited.add(node)
+            const children = this.#BLOCK_GRAPH.get(node);
+            if (Array.isArray(children)) {
+                stack = stack.concat(children)
+            }
+        }
+
+        return Array.from(visited);
+    }
+
+
     #_processChildren(inputs) {
-        return inputs.map(input => input.txid)
+
+        const children = inputs.map(input => {
+            return this.#dfs(input.txid)
+        })
+        return children.flat();
+    }
+
+    getGraph() {
+        return this.#BLOCK_GRAPH
     }
 
     // pre process the transactions
@@ -27,12 +52,11 @@ class TransactionAncestory {
         const transactions = await this.#_merge()
         for (let transaction of transactions) {
             if (this.#BLOCK_GRAPH.has(transaction.txid)) {
-                // 
+                // do nothing
             } else {
                 // Does not exist on Graph
                 this.#BLOCK_GRAPH.set(transaction.txid, this.#_processChildren(transaction.vin))
             }
-
         }
     }
 
@@ -41,16 +65,8 @@ class TransactionAncestory {
         for (let [transaction, ancestors] of this.#BLOCK_GRAPH) {
             const TRANSACTION_IN_DIFFERENT_BLOCK = new Set()
             for (let ancestor of ancestors) {
-                if (this.#BLOCK_GRAPH.has(ancestor)) {
-                    // add indirect parent
-                    debug({
-                        txn: transaction,
-                        prevSize: this.#BLOCK_GRAPH.get(transaction).length,
-                        message: 'FOUND_INDIRECT_PARENTS'
-                    })
-                    this.#BLOCK_GRAPH.set(transaction, this.#BLOCK_GRAPH.get(transaction).concat(ancestor))
-                } else {
-                    // parent not found in same block
+                // parent not found in same block
+                if (!this.#BLOCK_GRAPH.has(ancestor)) {
                     debug({
                         message: 'TRANSACTION_IN_DIFFERENT_BLOCK',
                         txn: ancestor

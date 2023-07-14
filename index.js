@@ -1,7 +1,5 @@
 const TransactionAncestory = require("./src/ancestry");
 
-
-
 (async function () {
     let transactionAncestory = new TransactionAncestory()
 
